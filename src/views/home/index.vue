@@ -1,7 +1,5 @@
 <template>
-    <div id="app">
-      <router-view/>
-    </div>
+    <div> 后台登录页面</div>
 </template>
 
 <script>
