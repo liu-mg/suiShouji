@@ -13,11 +13,25 @@
       "unicode_decimal": 58884
     },
     {
+      "icon_id": "8173140",
+      "name": "搜索-放大镜",
+      "font_class": "fangdajing",
+      "unicode": "e626",
+      "unicode_decimal": 58918
+    },
+    {
       "icon_id": "9512671",
       "name": "验证码",
       "font_class": "verify-fill",
       "unicode": "e63e",
       "unicode_decimal": 58942
+    },
+    {
+      "icon_id": "11331030",
+      "name": "搜索放大镜",
+      "font_class": "tubiao-",
+      "unicode": "e78a",
+      "unicode_decimal": 59274
     }
   ]
 }
