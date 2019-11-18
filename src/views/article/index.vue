@@ -11,22 +11,17 @@
         <!-- el-form搜索表单区域 -->
         <el-form ref="searchFormRef" :model="searchForm" label-width="100px">
           <el-form-item label="文章状态：">
-            <el-radio v-model="searchForm.status" label>全部</el-radio>
-            <el-radio v-model="searchForm.status" label="0">草稿</el-radio>
-            <el-radio v-model="searchForm.status" label="1">待审核</el-radio>
-            <el-radio v-model="searchForm.status" label="2">审核通过</el-radio>
-            <el-radio v-model="searchForm.status" label="3">审核失败</el-radio>
-            <el-radio v-model="searchForm.status" label="4">已删除</el-radio>
+            <el-radio-group v-model="searchForm.status">
+              <el-radio label>全部</el-radio>
+              <el-radio label="0">草稿</el-radio>
+              <el-radio label="1">待审核</el-radio>
+              <el-radio label="2">审核通过</el-radio>
+              <el-radio label="3">审核失败</el-radio>
+            </el-radio-group>
           </el-form-item>
           <el-form-item label="频道列表：">
-            <el-select v-model="searchForm.channel_id" clearable placeholder="请选择">
-              <el-option
-                v-for="item in channelList"
-                :key="item.id"
-                :label="item.name"
-                :value="item.id"
-              ></el-option>
-            </el-select>
+            <!-- 引入频道独立组件 -->
+            <channel-com @slt="selectHandler"></channel-com>
           </el-form-item>
           <el-form-item label="时间选择：">
             <el-date-picker
@@ -70,17 +65,37 @@
           </el-table-column>
           <el-table-column prop="pubdate" label="发布时间"></el-table-column>
           <el-table-column label="操作">
-            <el-button type="primary" size="mini">修改</el-button>
-            <el-button type="danger" size="mini">删除</el-button>
+            <template slot-scope="stData">
+              <el-button type="primary" size="mini" @click="$router.push(`/articleedit/${stData.row.id}`)">修改</el-button>
+              <el-button type="danger" size="mini" @click="del(stData.row.id)">删除</el-button>
+            </template>
           </el-table-column>
         </el-table>
       </div>
+
+      <!-- 分页 -->
+      <el-pagination
+        class="fenye"
+        @size-change="handleSizeChange"
+        @current-change="handleCurrentChange"
+        :current-page="searchForm.page"
+        :page-sizes="[10, 20, 30, 40]"
+        :page-size="searchForm.per_page"
+        layout="total, sizes, prev, pager, next, jumper"
+        :total="total"
+      ></el-pagination>
     </el-card>
   </div>
 </template>
 
 <script>
+// 引入频道公共组件
+import ChannelCom from '@/components/channel.vue'
 export default {
+  components: {
+    // 注册频道独立组件
+    ChannelCom
+  },
   // 给每一个业务组件都设置name属性值，以便通过devtools调试工具进行准确查找
   name: 'ArticleList',
   data () {
@@ -97,55 +112,43 @@ export default {
         page: 1, // 默认获取第一页数据
         per_page: 10 // 每页返回10条记录
       },
-      // 频道数据
-      channelList: [],
       // 临时时间存储
-      timetotime: [],
+      timetotime: '',
       // 文章列表
       articleList: [],
       // 监听器
       watch: {
-        // 对timetotime成员进行监听
-        timetotime (newval) {
-          // 把newval的值拆分分别给到 begin_pubdate和end_pubdate里边
-          if (newval) {
-            // 赋予时间信息
-            this.searchForm.begin_pubdate = newval[0]
-            this.searchForm.end_pubdate = newval[1]
+        timetotime: function (newv, oldv) {
+          if (newv) {
+            // 把newv拆开为两份
+            this.searchForm.begin_pubdate = newv[0]
+            this.searchForm.end_pubdate = newv[1]
           } else {
-            // 清空
+            // 清除时间信息
             this.searchForm.begin_pubdate = ''
             this.searchForm.end_pubdate = ''
           }
+        },
+        // 对searchForm的各个成员多深度监听，统一筛选获得文章
+        searchForm: {
+          handler: function (newv, oldv) {
+            this.getArticleList()
+          },
+          deep: true
         }
       }
     }
   },
 
   created () {
-    // 获得频道信息
-    this.getChannelList()
     this.getArticleList()
   },
 
   methods: {
-    // 获取频道数据方法
-    getChannelList () {
-      var pro = this.$http.get('/channels')
-      pro
-        .then(result => {
-          if (result.data.message === 'OK') {
-            this.channelList = result.data.data.channels
-          }
-        })
-        .catch(err => {
-          return this.$message.error('获得文章频道错误' + err)
-        })
-    },
     // 获取文章列表信息
     getArticleList () {
       // 把searchForm内部为空的成员都过滤掉
-      let searchData = {}
+      let searchData = {} // 筛选后的条件数据
       for (var i in this.searchForm) {
         // i:代表对象的成员属性名称
         if (this.searchForm[i]) {
@@ -154,7 +157,7 @@ export default {
         }
       }
 
-      let pro = this.$http.get('/articles')
+      let pro = this.$http.get('/articles', { params: searchData })
       pro
         .then(result => {
           if (result.data.message === 'OK') {
@@ -167,6 +170,46 @@ export default {
         .catch(err => {
           return this.$message.error('获得文章列表错误' + err)
         })
+    },
+
+    // 删除文章
+    del (id) {
+      this.$confirm('确定要删除么？', '删除', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        let pro = this.$http.delete(`/articles/${id}`)
+        pro
+          .then(result => {
+            this.$message.success('文章删除成功')
+            // 更新删除的文章
+            this.getArticleList()
+          })
+          .catch(err => {
+            return this.$message.error('删除文章错误' + err)
+          })
+      }).catch(() => {})
+    },
+
+    // 当前页码变化的回调处理事件
+    handleCurrentChange (val) {
+      // val变化后页码的值
+      // 把val赋值给searchForm.page成员
+      this.searchForm.page = val
+      // 变化后重新获得记录信息
+      this.getArticleList()
+    },
+    // 每页显示条数变化的处理事件
+    handleSizeChange (val) {
+      // 变化后的页码条数
+      this.searchForm.per_page = val
+      this.getArticleList()
+    },
+
+    // 频道组件方法，获得子组件传递过来的频道id并赋予channel_id成员
+    selectHandler (val) {
+      this.searchForm.channel_id = val
     }
   }
 }
@@ -175,5 +218,9 @@ export default {
 <style lang="less" scoped>
 .box-card {
   margin-bottom: 15px;
+  .fenye {
+    text-align: center;
+    margin-top: 15px;
+  }
 }
 </style>

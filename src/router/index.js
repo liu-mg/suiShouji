@@ -13,13 +13,16 @@ const routes = [
     children: [
       // 欢迎页面子路由配置
       { path: '/welcome', name: 'welcome', component: () => import('@/views/welcome') },
-      { path: '/article', name: 'article', component: () => import('@/views/article') }
+      { path: '/material', name: 'material/', component: () => import('@/views/material/material.vue') },
+      { path: '/article', name: 'article', component: () => import('@/views/article') },
+      { path: '/articleadd', name: 'articleadd', component: () => import('@/views/articleadd/articleadd.vue') },
+      { path: '/articleedit/:aid', name: 'articleedit', component: () => import('@/views/articleedit/articleedit.vue') },
+      { path: '/account', name: 'account', component: () => import('@/views/account/account') }
     ]
   }
 ]
 
 const router = new VueRouter({
-  // mode: 'history',
   routes
 })
 
