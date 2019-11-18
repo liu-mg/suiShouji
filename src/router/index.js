@@ -1,6 +1,9 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
 
+// 引入nprogress相关的js和css文件
+import NProgress from 'nprogress'
+import 'nprogress/nprogress.css'
 Vue.use(VueRouter)
 
 const routes = [
@@ -13,6 +16,7 @@ const routes = [
     children: [
       // 欢迎页面子路由配置
       { path: '/welcome', name: 'welcome', component: () => import('@/views/welcome') },
+      { path: '/fans', name: 'fans', component: () => import('@/views/fans/fans.vue') },
       { path: '/material', name: 'material/', component: () => import('@/views/material/material.vue') },
       { path: '/article', name: 'article', component: () => import('@/views/article') },
       { path: '/articleadd', name: 'articleadd', component: () => import('@/views/articleadd/articleadd.vue') },
@@ -34,6 +38,13 @@ router.beforeEach((to, from, next) => {
     return next('/login')
   }
   next()
+  // 开启进度条
+  NProgress.inc()
+})
+// 设置后置路由
+router.afterEach(() => {
+  // 关闭进度条
+  NProgress.done()
 })
 
 export default router
